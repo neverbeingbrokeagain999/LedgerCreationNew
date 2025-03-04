@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:8081', 'http://localhost:8000', 'http://localhost:3000'],
+  origin: ['http://localhost:8081', 'http://localhost:8000', 'http://localhost:3000', 'https://ledgercreationbackend.vercel.app'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));

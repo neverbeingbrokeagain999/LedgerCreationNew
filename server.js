@@ -1,19 +1,22 @@
 const express = require('express');
-const cors = require('cors');
 const sql = require('mssql');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 
-// Configure CORS for production
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' ? ['https://your-frontend-domain.vercel.app'] : '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'company-id']
-};
+app.use(cors({
+  origin: ['http://localhost:8081', 'http://localhost:8000', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
-app.use(cors(corsOptions));
 app.use(express.json());
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ message: "Welcome to Ledger Master API" });
+});
 
 const config = {
   user: process.env.DB_USER,
@@ -465,6 +468,114 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ 
       message: 'Error during login process',
       error: err.message 
+    });
+  }
+});
+
+// Update supplier
+app.put('/api/suppliers/:id', async (req, res) => {
+  try {
+    const supplierId = req.params.id;
+    const companyId = req.headers['company-id'];
+
+    if (!companyId) {
+      return res.status(400).json({
+        message: 'Company ID is required in headers'
+      });
+    }
+
+    // Validate supplier exists and belongs to the company
+    const checkRequest = new sql.Request();
+    checkRequest.input('supplierId', sql.Int, supplierId);
+    checkRequest.input('companyId', sql.Int, companyId);
+    
+    const checkResult = await checkRequest.query(
+      'SELECT SupplierId FROM Supplier WHERE SupplierId = @supplierId AND CompId = @companyId'
+    );
+
+    if (checkResult.recordset.length === 0) {
+      return res.status(404).json({
+        message: 'Supplier not found or does not belong to the company'
+      });
+    }
+
+    // Validate city exists
+    const cityId = req.body.City;
+    const cityCheck = await sql.query`SELECT CityId FROM City WHERE CityId = ${cityId}`;
+    if (cityCheck.recordset.length === 0) {
+      return res.status(400).json({
+        message: `Invalid city code: ${cityId}. Please select a valid city.`
+      });
+    }
+
+    const request = new sql.Request();
+    const {
+      Supplier, PrintName, Add1, Add2, Add3, City, Phone, Fax,
+      TNGST_No, TIN_No, Mailid, Contact_person, Mobile_No,
+      Supplier_Customer, Isactive, LedgerGroupId,
+      SupCode, CreditDays, VhNo, OpBalAmt, OpType
+    } = req.body;
+
+    // Add input parameters
+    request.input('SupplierId', sql.Int, supplierId);
+    request.input('Supplier', sql.NVarChar(100), Supplier);
+    request.input('PrintName', sql.NVarChar(100), PrintName);
+    request.input('Add1', sql.NVarChar(100), Add1);
+    request.input('Add2', sql.NVarChar(100), Add2);
+    request.input('Add3', sql.NVarChar(100), Add3);
+    request.input('City', sql.Int, City);
+    request.input('Phone', sql.NVarChar(20), Phone);
+    request.input('Fax', sql.NVarChar(20), Fax);
+    request.input('TNGST_No', sql.NVarChar(50), TNGST_No);
+    request.input('TIN_No', sql.NVarChar(50), TIN_No);
+    request.input('Mailid', sql.NVarChar(100), Mailid);
+    request.input('Contact_person', sql.NVarChar(100), Contact_person);
+    request.input('Mobile_No', sql.NVarChar(20), Mobile_No);
+    request.input('Supplier_Customer', sql.Char(1), Supplier_Customer);
+    request.input('Isactive', sql.Char(1), Isactive);
+    request.input('LedgerGroupId', sql.Int, LedgerGroupId);
+    request.input('SupCode', sql.NVarChar(10), SupCode);
+    request.input('CreditDays', sql.Int, CreditDays);
+    request.input('VhNo', sql.NVarChar(50), VhNo);
+    request.input('OpBalAmt', sql.Decimal(18, 2), OpBalAmt);
+    request.input('OpType', sql.NVarChar(10), OpType);
+
+    await request.query(`
+      UPDATE Supplier SET
+        Supplier = @Supplier,
+        PrintName = @PrintName,
+        Add1 = @Add1,
+        Add2 = @Add2,
+        Add3 = @Add3,
+        City = @City,
+        Phone = @Phone,
+        Fax = @Fax,
+        TNGST_No = @TNGST_No,
+        TIN_No = @TIN_No,
+        Mailid = @Mailid,
+        Contact_person = @Contact_person,
+        Mobile_No = @Mobile_No,
+        Supplier_Customer = @Supplier_Customer,
+        Isactive = @Isactive,
+        LedgerGroupId = @LedgerGroupId,
+        SupCode = @SupCode,
+        CreditDays = @CreditDays,
+        VhNo = @VhNo,
+        OpBalAmt = @OpBalAmt,
+        OpType = @OpType,
+        LastUpdate = GETDATE()
+      WHERE SupplierId = @SupplierId
+    `);
+
+    res.json({
+      message: 'Supplier updated successfully',
+      supplierId: supplierId
+    });
+  } catch (err) {
+    console.error('Error updating supplier:', err);
+    res.status(500).json({
+      message: 'Error updating supplier',
+      error: err.message
     });
   }
 });

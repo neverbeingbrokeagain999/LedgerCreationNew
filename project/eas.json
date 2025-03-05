@@ -1,0 +1,47 @@
+{
+  "cli": {
+    "version": ">= 15.0.12",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "env": {
+          "KOTLIN_VERSION": "1.9.25"
+        }
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "env": {
+          "KOTLIN_VERSION": "1.9.25"
+        }
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "android": {
+        "env": {
+          "KOTLIN_VERSION": "1.9.25"
+        }
+      }
+    },
+    "apk": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "withoutCredentials": true,
+        "env": {
+          "KOTLIN_VERSION": "1.9.25"
+        }
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

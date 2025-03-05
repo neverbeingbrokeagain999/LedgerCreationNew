@@ -66,6 +66,16 @@ export default function TabLayout() {
         },
       }}>
       <Tabs.Screen
+        name="inward"
+        options={{
+          title: 'Inward Entry',
+          headerTitle: 'Inward Entry',
+          tabBarIcon: ({ color, size }) => (
+            <List size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="list"
         options={{
           title: 'Suppliers',
